@@ -40,7 +40,6 @@ void functCommand(CmdParser *myParser){
   char *strCommandId = myParser->getCmdParam(1);
   int id = strtol(strCommandId,NULL,16);
   master.sendMessage(id,myParser->getCmdParam(2));
-
 }
 
 void functStatusR(CmdParser *myParser){
