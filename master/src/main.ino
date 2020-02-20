@@ -1,19 +1,56 @@
 #include <Arduino.h>
-#include <CAN.h>
+#include <stdlib.h>
+#include <CmdParser.hpp>
+#include <CmdCallback.hpp>
+#include "erc-master.h"
+
+CmdCallback<3> cmdCallback;
+
+char strCommand[] = "CMD";
+char strStatusR[] = "STATUS";
+ERCMaster master;
 
 void setup() {
   Serial.begin(9600);
+
+  cmdCallback.addCmd(strCommand, &functCommand);
+  cmdCallback.addCmd(strStatusR, &functStatusR);
+
   while (!Serial);
 
   Serial.println("CAN Receiver");
 
   // start the CAN bus at 500 kbps
-  if (!CAN.begin(500E3)) {
+  if (!master.begin()) {
     Serial.println("Starting CAN failed!");
     while (1);
   }
 }
 
+void loop() {
+
+  CmdBuffer<32> myBuffer;
+  CmdParser     myParser;
+
+  cmdCallback.loopCmdProcessing(&myParser, &myBuffer, &Serial);
+}
+
+void functCommand(CmdParser *myParser){
+  Serial.println("CMD Got");
+  char *strCommandId = myParser->getCmdParam(1);
+  int id = strtol(strCommandId,NULL,16);
+  master.sendMessage(id,myParser->getCmdParam(2));
+
+}
+
+void functStatusR(CmdParser *myParser){
+  Serial.println("STATUS Got");
+  char *strStatusId = myParser->getCmdParam(1);
+  int id = strtol(strStatusId,NULL,16);
+  master.sendMessage(id,"");
+}
+
+/*
 void loop() {
   // try to parse packet
   int packetSize = CAN.parsePacket();
@@ -50,4 +87,4 @@ void loop() {
 
     Serial.println();
   }
-}
+}*/
